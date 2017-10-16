@@ -1,6 +1,6 @@
 open OUnit;;
 open Slp;;
-open Slinterp;;
+open Maxargs;;
 
 let prog = CompoundStm(AssignStm("a", OpExp(NumExp 5, Plus, NumExp 3)), 
              CompoundStm(AssignStm("b",
@@ -10,9 +10,12 @@ let prog = CompoundStm(AssignStm("a", OpExp(NumExp 5, Plus, NumExp 3)),
                     PrintStm[IdExp "b"]));;
 
 let test1 = PrintStm[IdExp "a"]
+let test2 = CompoundStm(PrintStm[IdExp "a"],PrintStm[IdExp "a"; IdExp "a"; IdExp "a"; IdExp "a"])
 
 let test_sli = 
     assert_equal 2 (maxargs prog);
-    assert_equal 1 (maxargs test1)
+    assert_equal 1 (maxargs test1);
+    assert_equal 4 (maxargs test2)
+
 let _ =
     test_sli
