@@ -1,6 +1,7 @@
 # compiler
 
 ### lexer ###
-
-> ocamllex lexer.mll
-> ocamlbuild lexer.native
+```
+ ocamllex lexer.mll
+ ocamlbuild lexer.native
+```
