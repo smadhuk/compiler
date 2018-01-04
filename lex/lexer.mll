@@ -7,36 +7,59 @@
     let sprintf = Printf.sprintf
 
     type token = 
-        | TYPE of string
-        | VAR of string
-        | FUNCTION of string
-        | BREAK of string
-        | OF of string
-        | END of string
-        | IN of string
-        | NIL of string
-        | LET of string
-        | DO of string
-        | TO of string
-        | FOR of string
-        | WHILE of string
-        | ELSE of string
-        | THEN of string
-        | IF of string
-        | ARRAY of string
-        | ASSIGN of string
-        | OR of string
-        | AND of string
-        | GE of string
-        | GT of string
-        | LE of string
-        | LT of string
-        | NEQ of string
-        | EQ of string
-        | DIVIDE of string
-        | TIMES of string
-        | MINUS of string
-        | PLUS of string
+        | TYPE 
+        | VAR 
+        | FUNCTION 
+        | BREAK 
+        | OF 
+        | END 
+        | IN 
+        | NIL 
+        | LET
+        | DO 
+        | TO 
+        | FOR 
+        | WHILE 
+        | ELSE 
+        | THEN 
+        | IF 
+        | ARRAY 
+        | ASSIGN
+        | OR 
+        | AND 
+        | GE 
+        | LE 
+        | NEQ 
+        | EQ 
+        | AMP
+        | LPAREN   
+        | RPAREN   
+        | LBRACKET 
+        | RBRACKET 
+        | LCURLY   
+        | RCURLY   
+        | LG       
+        | LT       
+        | GT       
+        | LEQ      
+        | GEQ      
+        | BAR      
+        | COMMA    
+        | COLON    
+        | SEMICOLON
+        | DIVIDE
+        | TIMES 
+        | MINUS 
+        | PLUS 
+        | SLASH
+        | STAR
+        | PLUSEQ
+        | MINUSEQ
+        | STAREQ
+        | SLASHEQ
+        | INT of int
+        | ID of string
+        | STR of string
         | EOF
     
     (* Utility for printing current position of buffer *)
@@ -51,8 +74,6 @@
             { lexbuf.L.lex_curr_p with L.pos_fname = fname }
         ; lexbuf
         )
-
-
 
     (* Utility for printing error message in buffer *)
     exception Error of string
@@ -74,7 +95,25 @@
     | ws+       { token lexbuf  }
     | nl        { L.new_line lexbuf; token lexbuf  }
     | digit+    { INT(int_of_string @@ get lexbuf) }
+    | "while"   { WHILE         }
+    | "for"     { FOR           }
+    | "to"      { TO            }
+    | "break"   { BREAK         }
+    | "in"      { IN            }
+    | "end"     { END           }
+    | "function" { FUNCTION     }
+    | "var"     { VAR           }
+    | "let"     { LET           }
+    | "type"    { TYPE          }
+    | "array"   { ARRAY         }
+    | "if"      { IF            }
+    | "then"    { THEN          }
+    | "else"    { ELSE          }
+    | "of"      { OF            }
+    | "do"      { DO            }
+    | "nil"     { NIL           }
     | id        { ID(get lexbuf)}
+    | '='       { EQ            }
     | '+'       { PLUS          }
     | '-'       { MINUS         }
     | '*'       { STAR          }
@@ -84,23 +123,26 @@
     | "*="      { STAREQ        }
     | "/="      { SLASHEQ       }
     | ":="      { ASSIGN        }
+    | '&'       { AMP           }
+    | '('       { LPAREN        }
+    | ')'       { RPAREN        }
+    | '['       { LBRACKET      }
+    | ']'       { RBRACKET      }
+    | '{'       { LCURLY        }
+    | '}'       { RCURLY        }
+    | "<>"      { LG            }
+    | '<'       { LT            }
+    | '>'       { GT            }
+    | "<="      { LEQ           }
+    | ">="      { GEQ           }
+    | '|'       { BAR           }
+    | ','       { COMMA         }
+    | ':'       { COLON         }
+    | ';'       { SEMICOLON     }
+    | '"'       { STR (string (B.create 100) lexbuf) } (* see below *)
     | eof       { EOF           }
     | _         { error lexbuf 
                    "found '%s' - don't know how to handle" @@ get lexbuf }
-
-    and escape b = parse
-    | '&'       { B.add_string b "&amp;";  escape b lexbuf } 
-    | '"'       { B.add_string b "&quot;"; escape b lexbuf } 
-    | '\''      { B.add_string b "&apos;"; escape b lexbuf }
-    | '>'       { B.add_string b "&gt;";   escape b lexbuf }
-    | '<'       { B.add_string b "&lt;";   escape b lexbuf }
-    | [^'&' '"' '\'' '>' '<']+ 
-                { B.add_string b @@ get lexbuf
-                            ; escape b lexbuf
-                                        }
-                | eof       { let x = B.contents b in B.clear b; x }
-                | _         { error lexbuf 
-                                "don't know how to quote: %s" (get lexbuf) }
 
     and string buf = parse (* use buf to build up result *)
     | [^'"' '\n' '\\']+  
@@ -122,11 +164,31 @@
     | _         { error lexbuf "found '%s' - don't know how to handle" @@ get lexbuf }
 
 {
-    let escape str = escape (B.create 100) (L.from_string str)
+    let string str = string (B.create 100) (L.from_string str)
 
     let to_string = function
-    | STR(str)          -> sprintf "STR(%s)" (escape str)
+    | STR(str)          -> sprintf "STR(%s)" (string str)
     | INT(d)            -> sprintf "INT(%d)" d
+    | ID(str)           -> sprintf "ID(%s)" str
+    | WHILE             -> sprintf "WHILE"
+    | TYPE              -> sprintf "TYPE"
+    | AND               -> sprintf "AND"
+    | OR                -> sprintf "OR"
+    | FOR               -> sprintf "FOR"
+    | TO                -> sprintf "TO"
+    | BREAK             -> sprintf "BREAK"
+    | LET               -> sprintf "LET"
+    | IN                -> sprintf "IN"
+    | END               -> sprintf "END"
+    | FUNCTION          -> sprintf "FUNCTION"
+    | VAR               -> sprintf "VAR"
+    | ARRAY             -> sprintf "ARRAY"
+    | IF                -> sprintf "IF"
+    | THEN              -> sprintf "THEN"
+    | ELSE              -> sprintf "ELSE"
+    | DO                -> sprintf "DO"
+    | OF                -> sprintf "OF"
+    | NIL               -> sprintf "NIL"
     | PLUS              -> sprintf "PLUS"
     | MINUS             -> sprintf "MINUS"
     | STAR              -> sprintf "STAR"
@@ -135,10 +197,30 @@
     | MINUSEQ           -> sprintf "MINUSEQ"
     | STAREQ            -> sprintf "STAREQ"
     | SLASHEQ           -> sprintf "SLASHEQ"
-    | ID(str)           -> sprintf "ID(%s)" str
     | ASSIGN            -> sprintf "ASSIGN"
     | EOF               -> sprintf "EOF"
-
+    | LPAREN            -> sprintf "LPAREN"
+    | RPAREN            -> sprintf "RPAREN"
+    | EQ                -> sprintf "EQ"
+    | GE                -> sprintf "GE"
+    | LE                -> sprintf "LE"
+    | NEQ               -> sprintf "NEQ"
+    | AMP               -> sprintf "AMP"
+    | LBRACKET          -> sprintf "LBRACKET"
+    | RBRACKET          -> sprintf "RBRACKET"
+    | LCURLY            -> sprintf "LCURLY"
+    | RCURLY            -> sprintf "RCURLY"
+    | LG                -> sprintf "LG"
+    | LT                -> sprintf "LT"
+    | GT                -> sprintf "GT"
+    | LEQ               -> sprintf "LEQ"
+    | GEQ               -> sprintf "GEQ"
+    | BAR               -> sprintf "BAR"
+    | COMMA             -> sprintf  "COMMA"
+    | COLON             -> sprintf  "COLON"
+    | SEMICOLON         -> sprintf  "SEMICOLON"
+    | DIVIDE            -> sprintf  "DIVIDE"
+    | TIMES             -> sprintf  "TIMES"
     
     let main () = 
         let lexbuf = set_filename "stdin" @@ L.from_channel stdin in
@@ -147,8 +229,8 @@
             | x   -> loop (to_string x :: acc) (token lexbuf)
         in
             loop [] (token lexbuf)
-            |> String.concat ""
-            |> print endline
+            |> String.concat " "
+            |> print_endline
 
     let () = main ()
 }
